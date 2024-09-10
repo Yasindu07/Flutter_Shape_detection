@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "75380524958",
+    "project_id": "shapedetection-30d6c",
+    "storage_bucket": "shapedetection-30d6c.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:75380524958:android:ff9bdadc6adcd959aeb88f",
+        "android_client_info": {
+          "package_name": "com.example.shape_detection"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCHSgMz1kj4N-_HpYObIOOvou00ZoFmBcI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
