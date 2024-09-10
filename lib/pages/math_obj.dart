@@ -4,6 +4,8 @@ import 'package:flutter_tflite/flutter_tflite.dart';
 import 'package:camera/camera.dart';
 import 'dart:developer' as devtools;
 import 'package:shape_detection/camera_helper.dart';
+import 'package:shape_detection/services/database_service.dart';
+import 'package:shape_detection/widgets/display_shape.dart';
 
 class MathsObj extends StatefulWidget {
   const MathsObj({super.key});
@@ -19,6 +21,7 @@ class _MathsObjState extends State<MathsObj> {
   bool _modelLoaded = false;
 
   final CameraHelper _cameraHelper = CameraHelper();
+  final DatabaseService _databaseService = DatabaseService();
 
   Future<void> _tfliteInit() async {
     String? res = await Tflite.loadModel(
@@ -71,45 +74,62 @@ class _MathsObjState extends State<MathsObj> {
     });
   }
 
+  void _saveDetectedShape() async {
+    if (label.isNotEmpty) {
+      // If the label is not empty, save the shape to Firestore
+      await _databaseService.saveShape(label);
+      devtools.log("Shape saved: $label");
+    } else {
+      devtools.log("No shape detected to save");
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Maths Object Detection'),
       ),
-      body: Center(
-        child: Column(
-          children: [
-            const SizedBox(height: 20),
-            if (_cameraHelper.isCameraInitialized &&
-                _cameraHelper.cameraController != null)
-              SizedBox(
-                width: 300,
-                height: 400,
-                child: AspectRatio(
-                  aspectRatio:
-                      _cameraHelper.cameraController!.value.aspectRatio,
-                  child: CameraPreview(_cameraHelper.cameraController!),
+      body: SingleChildScrollView(
+        child: Center(
+          child: Column(
+            children: [
+              const SizedBox(height: 20),
+              if (_cameraHelper.isCameraInitialized &&
+                  _cameraHelper.cameraController != null)
+                SizedBox(
+                  width: 300,
+                  height: 400,
+                  child: AspectRatio(
+                    aspectRatio:
+                        _cameraHelper.cameraController!.value.aspectRatio,
+                    child: CameraPreview(_cameraHelper.cameraController!),
+                  ),
+                )
+              else
+                const CircularProgressIndicator(),
+              const SizedBox(height: 20),
+              if (label.isNotEmpty)
+                Text(
+                  'Detected Shape: $label',
+                  style: const TextStyle(
+                      fontSize: 20, fontWeight: FontWeight.bold),
                 ),
-              )
-            else
-              const CircularProgressIndicator(),
-            const SizedBox(height: 20),
-            if (label.isNotEmpty)
-              Text(
-                'Detected Shape: $label',
-                style:
-                    const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              const SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: () async {
+                  await _ensureModelIsLoaded();
+                  await _cameraHelper.captureImage(
+                      _updateImageFile, _updateLabel);
+                  _saveDetectedShape(); // Save the shape after capturing the image
+                },
+                child: const Text('Capture Image and Save Shape'),
               ),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: () async {
-                await _ensureModelIsLoaded();
-                _cameraHelper.captureImage(_updateImageFile, _updateLabel);
-              },
-              child: const Text('Capture Image'),
-            ),
-          ],
+              const SizedBox(height: 20),
+              // Display shapes from Firestore using DisplayShapes widget
+              const DisplayShapes(),
+            ],
+          ),
         ),
       ),
     );

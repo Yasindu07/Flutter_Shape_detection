@@ -3,7 +3,6 @@ import 'package:flutter_tflite/flutter_tflite.dart';
 import 'package:image/image.dart' as img;
 import 'dart:developer' as devtools;
 import 'package:camera/camera.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 
 class CameraHelper {
   CameraController? _cameraController;
@@ -51,10 +50,6 @@ class CameraHelper {
 
       String label = recognitions[0]['label'].toString();
       onLabelUpdate(label); // Notify the UI about the new label
-
-      // Upload the resized image to Firebase
-      String downloadUrl = await uploadImageToFirebase(resizedFile);
-      devtools.log("Image uploaded to Firebase: $downloadUrl");
     } catch (e) {
       devtools.log("Error capturing image: $e");
     }
@@ -69,29 +64,6 @@ class CameraHelper {
       ..writeAsBytesSync(img.encodeJpg(resizedImage));
 
     return resizedImageFile;
-  }
-
-  Future<String> uploadImageToFirebase(File imageFile) async {
-    try {
-      // Get a reference to Firebase Storage
-      final storageRef = FirebaseStorage.instance.ref();
-
-      // Create a unique file name based on the current timestamp
-      String fileName = DateTime.now().millisecondsSinceEpoch.toString();
-
-      // Upload the file to Firebase Storage
-      UploadTask uploadTask =
-          storageRef.child('images/$fileName.jpg').putFile(imageFile);
-
-      // Wait for the upload to complete and get the download URL
-      TaskSnapshot taskSnapshot = await uploadTask;
-      String downloadUrl = await taskSnapshot.ref.getDownloadURL();
-
-      return downloadUrl;
-    } catch (e) {
-      devtools.log("Error uploading image to Firebase: $e");
-      return '';
-    }
   }
 
   void disposeCamera() {
