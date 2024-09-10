@@ -6,10 +6,11 @@ class DatabaseService {
       FirebaseFirestore.instance.collection('shapes');
 
   // Save the shape to the database
-  Future<void> saveShape(String shapeName) async {
+  Future<void> saveShape(String shapeName, String imageUrl) async {
     try {
       await shapesCollection.add({
         'shapeName': shapeName,
+        'imageUrl': imageUrl,
         'timestamp': FieldValue.serverTimestamp(),
       });
     } catch (e) {
@@ -45,6 +46,7 @@ class DatabaseService {
       return ShapeModel(
         shapeId: doc.id,
         shapeName: doc['shapeName'] ?? '',
+        imageUrl: doc['imageUrl'] ?? '', // Get imageUrl from Firestore data
         // Ensure the timestamp is handled properly, and default to DateTime.now() if null
         timestamp: doc['timestamp'] != null
             ? Timestamp.fromDate((doc['timestamp'] as Timestamp).toDate())

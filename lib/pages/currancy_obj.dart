@@ -1,9 +1,11 @@
 import 'dart:io';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_tflite/flutter_tflite.dart';
 import 'package:camera/camera.dart';
-import 'package:shape_detection/camera_helper.dart';
 import 'dart:developer' as devtools;
+import 'package:shape_detection/camera_helper.dart';
+import 'package:shape_detection/services/database_service.dart';
 
 class CurrancyObj extends StatefulWidget {
   const CurrancyObj({super.key});
@@ -19,6 +21,7 @@ class _CurrancyObjState extends State<CurrancyObj> {
   bool _modelLoaded = false;
 
   final CameraHelper _cameraHelper = CameraHelper();
+  final DatabaseService _databaseService = DatabaseService();
 
   Future<void> _tfliteInit() async {
     String? res = await Tflite.loadModel(
@@ -28,10 +31,10 @@ class _CurrancyObjState extends State<CurrancyObj> {
         isAsset: true,
         useGpuDelegate: false);
     if (res == null) {
-      devtools.log("Failed to load the maths model");
+      devtools.log("Failed to load the currancy model");
       return;
     }
-    devtools.log("Maths Model Loaded Successfully");
+    devtools.log("Currancy Model Loaded Successfully");
   }
 
   Future<void> _ensureModelIsLoaded() async {
@@ -71,11 +74,33 @@ class _CurrancyObjState extends State<CurrancyObj> {
     });
   }
 
+  void _saveDetectedShape() async {
+    if (filePath != null && label.isNotEmpty) {
+      try {
+        // Upload image to Firebase Storage
+        final fileName = filePath!.path.split('/').last;
+        final storageRef =
+            FirebaseStorage.instance.ref().child('shapes/$fileName');
+        UploadTask uploadTask = storageRef.putFile(filePath!);
+        TaskSnapshot snapshot = await uploadTask;
+        String imageUrl = await snapshot.ref.getDownloadURL();
+
+        // Save shape with image URL to Firestore
+        await _databaseService.saveShape(label, imageUrl);
+        devtools.log("Shape saved with image URL: $imageUrl");
+      } catch (e) {
+        devtools.log("Error saving shape: $e");
+      }
+    } else {
+      devtools.log("No image or label detected to save");
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Maths Object Detection'),
+        title: const Text('Currancy Object Detection'),
       ),
       body: Center(
         child: Column(
@@ -105,9 +130,11 @@ class _CurrancyObjState extends State<CurrancyObj> {
             ElevatedButton(
               onPressed: () async {
                 await _ensureModelIsLoaded();
-                _cameraHelper.captureImage(_updateImageFile, _updateLabel);
+                await _cameraHelper.captureImage(
+                    _updateImageFile, _updateLabel);
+                _saveDetectedShape(); // Save the shape after capturing the image
               },
-              child: const Text('Capture Image'),
+              child: const Text('Capture Image and Save Shape'),
             ),
           ],
         ),
