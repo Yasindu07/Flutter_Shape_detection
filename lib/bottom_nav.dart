@@ -3,7 +3,8 @@ import 'package:salomon_bottom_bar/salomon_bottom_bar.dart';
 import 'package:shape_detection/pages/currancy_obj.dart';
 import 'package:shape_detection/pages/math_obj.dart';
 import 'package:shape_detection/pages/science_obj.dart';
-import 'package:shape_detection/widgets/display_shape.dart';
+import 'package:shape_detection/pages/display_shape.dart';
+import 'package:shape_detection/widgets/voice.dart';
 
 class BottomNav extends StatefulWidget {
   const BottomNav({super.key});
@@ -21,7 +22,7 @@ class _BottomNavState extends State<BottomNav> {
     SalomonBottomBarItem(
         icon: const Icon(Icons.person), title: const Text("Science")),
     SalomonBottomBarItem(
-        icon: const Icon(Icons.money_outlined), title: const Text("currancy")),
+        icon: const Icon(Icons.money_outlined), title: const Text("Currency")),
     SalomonBottomBarItem(
         icon: const Icon(Icons.save), title: const Text("Save")),
   ];
@@ -41,6 +42,12 @@ class _BottomNavState extends State<BottomNav> {
     ),
   ];
 
+  void _updateIndex(int index) {
+    setState(() {
+      _currentIndex = index;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -53,6 +60,8 @@ class _BottomNavState extends State<BottomNav> {
           _currentIndex = index;
         }),
       ),
+      // Pass the update callback to the SpeechButton
+      floatingActionButton: SpeechButton(onNavigateCommand: _updateIndex),
     );
   }
 }

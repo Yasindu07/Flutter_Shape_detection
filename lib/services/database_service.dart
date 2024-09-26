@@ -1,5 +1,8 @@
+import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:shape_detection/model/shape_model.dart';
+import 'dart:developer' as devtools;
 
 class DatabaseService {
   final CollectionReference shapesCollection =
@@ -32,8 +35,10 @@ class DatabaseService {
   }
 
   // Delete the shape from the database
-  Future<void> deleteShape(String shapeID) async {
+  Future<void> deleteShape(String shapeID, String imageUrl) async {
     try {
+      // Delete image from Firebase Storage
+      await FirebaseStorage.instance.refFromURL(imageUrl).delete();
       await shapesCollection.doc(shapeID).delete();
     } catch (e) {
       print("Error deleting shape: $e");
@@ -61,5 +66,29 @@ class DatabaseService {
         .orderBy('timestamp', descending: true)
         .snapshots()
         .map(_shapeListFromSnapshot);
+  }
+
+  //Image Uploaded
+  Future<void> saveDetectedShape(File? filePath, String label) async {
+    if (filePath != null && label.isNotEmpty) {
+      try {
+        // Upload image to Firebase Storage
+        final fileName = filePath.path.split('/').last;
+        final storageRef =
+            FirebaseStorage.instance.ref().child('shapes/$fileName');
+        UploadTask uploadTask = storageRef.putFile(filePath);
+        TaskSnapshot snapshot = await uploadTask;
+        String imageUrl = await snapshot.ref.getDownloadURL();
+
+        // Save shape with image URL to Firestore
+        //_databaseService.saveShape(label, imageUrl);
+        await saveShape(label, imageUrl);
+        devtools.log("Shape saved with image URL: $imageUrl");
+      } catch (e) {
+        devtools.log("Error saving shape: $e");
+      }
+    } else {
+      devtools.log("No image or label detected to save");
+    }
   }
 }
